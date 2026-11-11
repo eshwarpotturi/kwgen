@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>kwgen: keywords for any anime title</title>
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--mut:#666;--line:#ddd;--acc:#2f5597}
+@media(prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--mut:#999;--line:#333;--acc:#8fb4ff}}
+body{font:20px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--fg);max-width:1100px;margin:2rem auto;padding:0 1rem}
+h1{font-size:1.6rem;margin:0}p{color:var(--mut);margin:.3rem 0 1rem}
+input,button{font:inherit;padding:.4rem .7rem;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
+input{width:22rem;max-width:100%}button{background:var(--acc);color:#fff;border:0;cursor:pointer}
+button.alt{background:none;color:var(--acc);border:1px solid var(--acc)}
+table{border-collapse:collapse;width:100%;font-size:.85rem;margin-top:1rem}
+th,td{border-bottom:1px solid var(--line);padding:.35rem .5rem;text-align:left;vertical-align:top}
+th{position:sticky;top:0;background:var(--bg)}
+.chips span{display:inline-block;margin:.2rem .3rem .2rem 0;padding:.1rem .6rem;border:1px solid var(--line);border-radius:99px;font-size:.85rem;cursor:pointer}
+.chips span.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+pre{white-space:pre-wrap;word-break:break-all;font-size:.8rem;background:none;border:1px solid var(--line);padding:.6rem;border-radius:6px;margin:.3rem 0}
+#msg{color:var(--mut);margin-top:.6rem}
+</style></head><body>
+<h1>kwgen</h1>
+<p>Type an anime title. It pulls the facts from AniList and builds a keyword table and ready X search queries.</p>
+<form id="f"><input id="t" placeholder="e.g. Kaiju No. 8" value="Kaiju No. 8" autofocus> <button>Generate</button>
+<button type="button" class="alt" id="csv" hidden>Download CSV</button></form>
+<div id="msg"></div><div class="chips" id="chips"></div>
+<div id="qs"></div><table id="tb" hidden><thead><tr><th>Category</th><th>Keyword</th><th>Lang</th><th>Needs title word</th><th>Note</th></tr></thead><tbody></tbody></table>
+<script>
+const Q=`query($s:String){Media(search:$s,type:ANIME,sort:SEARCH_MATCH){id title{romaji english native}synonyms genres tags{name rank isMediaSpoiler}
+studios(isMain:true){nodes{name}}staff(perPage:25,sort:RELEVANCE){edges{role node{name{full native}}}}
+characters(perPage:25,sort:[ROLE,RELEVANCE]){edges{role node{name{full native alternative}}voiceActors(language:JAPANESE){name{full native}}}}
+relations{edges{relationType node{title{romaji english native}format}}}externalLinks{site url}
+recommendations(perPage:8,sort:RATING_DESC){nodes{mediaRecommendation{title{romaji english}}}}}}`;
+const SHARED=[["Merchandise words","en","merch, figure, plush, plushie, hoodie, t-shirt, keychain, acrylic stand, nendoroid, poster, pre-order, where to buy, collab, limited edition, controller skin"],
+["Merchandise words","ja","グッズ, フィギュア, ぬいぐるみ, パーカー, Tシャツ, キーホルダー, アクスタ, 予約, 欲しい, コラボ, 限定"],
+["Platform and gaming overlap","en","PlayStation, PS5, PS4, PS Plus, DualSense, State of Play, PlayStation Store, PSN avatar, game adaptation, anime game"],
+["Platform and gaming overlap","ja","プレイステーション, PS5, ゲーム化, アニメゲーム"],
+["Streaming and platforms","en","Crunchyroll, Funimation, Netflix, Hulu, Prime Video, HIDIVE, simulcast, English dub"],
+["Brands and retailers","en","Hot Topic, BoxLunch, Funko, Good Smile, Bandai, Amazon, Target, Walmart, Uniqlo UT"]];
+const KEEP=["Director","Original Creator","Story","Music","Series Composition","Character Design","Sound Director","Chief Animation"];
+const BAD=/[가-힯Ѐ-ӿ؀-ۿ฀-๿]/, JA=/[぀-ヿ一-鿿]/;
+const lang=s=>JA.test(s)?"ja":"en", COTERM=new Set(["Voice actors","Genre and theme","Similar titles","Merchandise words","Platform and gaming overlap","Streaming and platforms","Brands and retailers"]);
+let rows=[],queries=[],title="";
+function hashtag(s){const p=s.replace(/[^\w぀-ヿ一-鿿 ]/g," ").split(/\s+/).filter(Boolean);return p.length?"#"+p.map(x=>JA.test(x)?x:x[0].toUpperCase()+x.slice(1)).join(""):null}
+function build(m){rows=[];const seen=new Set();
+ const add=(c,t,note="",co=false)=>{if(!t||!t.trim()||BAD.test(t))return;t=t.trim();const k=c+"|"+t.toLowerCase();if(seen.has(k))return;seen.add(k);
+  rows.push({c,t,l:lang(t),co:co||COTERM.has(c),n:note})};
+ const T=m.title,names=[T.english,T.romaji,T.native,...(m.synonyms||[])];
+ names.forEach(n=>add("Title names",n));names.forEach(n=>{if(n&&n.includes(":"))add("Title names",n.split(":")[0],"short form")});
+ [T.english,T.romaji,T.native].forEach(n=>n&&add("Hashtags",hashtag(n),"generated candidate; confirm on sample posts"));
+ (m.externalLinks||[]).forEach(l=>{if(["Twitter","X"].includes(l.site)&&l.url)add("Official account","@"+l.url.replace(/\/$/,"").split("/").pop(),"official X account")});
+ m.characters.edges.forEach(e=>{const n=e.node.name,r=e.role.toLowerCase();add("Characters",n.full,r);add("Characters",n.native,r);(n.alternative||[]).slice(0,2).forEach(a=>add("Characters",a,"alias"));
+  (e.voiceActors||[]).forEach(v=>{add("Voice actors",v.name.full,"voices "+n.full);add("Voice actors",v.name.native,"voices "+n.full)})});
+ m.staff.edges.forEach(e=>{if(KEEP.some(k=>e.role.includes(k))){add("Creators and crew",e.node.name.full,e.role);add("Creators and crew",e.node.name.native,e.role)}});
+ m.studios.nodes.forEach(s=>add("Creators and crew",s.name,"studio"));
+ m.relations.edges.forEach(e=>["english","romaji","native"].forEach(k=>add("Franchise and related works",e.node.title[k],e.relationType.toLowerCase().replace(/_/g," "))));
+ m.tags.filter(x=>x.rank>=50&&!x.isMediaSpoiler).forEach(x=>add("Genre and theme",x.name,"theme"));m.genres.forEach(g=>add("Genre and theme",g,"genre"));
+ m.recommendations.nodes.forEach(r=>r.mediaRecommendation&&add("Similar titles",r.mediaRecommendation.title.english||r.mediaRecommendation.title.romaji,"for co-mention analysis"));
+ SHARED.forEach(([c,l,s])=>s.split(",").forEach(t=>add(c,t.trim(),"shared list",true)));
+ const q=t=>t.includes(" ")?`"${t}"`:t,grp=(name,f)=>["en","ja"].forEach(l=>{let cur=[];const ts=rows.filter(r=>f(r)&&r.l===l).map(r=>q(r.t));
+  const flush=()=>{if(cur.length)queries.push([name,l,`(${cur.join(" OR ")}) lang:${l} -is:retweet`]);cur=[]};
+  ts.forEach(t=>{if(cur.concat(t).join(" OR ").length+12>450)flush();cur.push(t)});flush()});
+ queries=[];grp("A core",r=>["Title names","Hashtags","Official account"].includes(r.c));grp("B characters",r=>r.c==="Characters");grp("C creators and crew",r=>r.c==="Creators and crew");
+ grp("F voice actors (separate stream)",r=>r.c==="Voice actors");grp("G gaming overlap (add a title word)",r=>r.c==="Platform and gaming overlap");grp("H merchandise (add a title word)",r=>["Merchandise words","Brands and retailers"].includes(r.c));
+}
+function show(){const cats=[...new Set(rows.map(r=>r.c))];let sel=new Set(cats);
+ const draw=()=>{chips.innerHTML=cats.map(c=>`<span class="${sel.has(c)?"on":""}" data-c="${c}">${c} (${rows.filter(r=>r.c===c).length})</span>`).join("");
+  tb.hidden=false;tb.tBodies[0].innerHTML=rows.filter(r=>sel.has(r.c)).map(r=>`<tr><td>${r.c}</td><td>${esc(r.t)}</td><td>${r.l}</td><td>${r.co?"yes":""}</td><td>${esc(r.n)}</td></tr>`).join("")};
+ chips.onclick=e=>{const c=e.target.dataset.c;if(c){sel.has(c)?sel.delete(c):sel.add(c);draw()}};draw();
+ qs.innerHTML="<h3>Queries (X syntax, 450 characters or less)</h3>"+queries.map(([g,l,s])=>`<div><b>${g}</b> [${l}]<pre>${esc(s)}</pre></div>`).join("");csv.hidden=false}
+const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+f.onsubmit=async e=>{e.preventDefault();msg.textContent="Fetching from AniList...";tb.hidden=true;qs.innerHTML=chips.innerHTML="";csv.hidden=true;
+ try{const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({query:Q,variables:{s:t.value}})});
+  const j=await r.json();if(!j.data||!j.data.Media)throw new Error(j.errors?j.errors[0].message:"No match");const m=j.data.Media;title=m.title.romaji;
+  build(m);msg.textContent=`Matched ${m.title.romaji} / ${m.title.native || ""}: ${rows.length} keywords, ${queries.length} queries.`;show()}catch(x){msg.textContent="Error: "+x.message}};
+csv.onclick=()=>{const c=s=>`"${String(s).replace(/"/g,'""')}"`;const b=new Blob(["﻿"+"category,keyword,language,needs_title_word,note\n"+rows.map(r=>[r.c,r.t,r.l,r.co?"yes":"no",r.n].map(c).join(",")).join("\n")],{type:"text/csv"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=title.replace(/\W+/g,"_")+"_keywords.csv";a.click()};
+f.requestSubmit();
+</script></body></html>
