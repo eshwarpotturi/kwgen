@@ -2,28 +2,64 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>kwgen: keywords for any anime title</title>
 <style>
-:root{--bg:#fff;--fg:#1a1a1a;--mut:#666;--line:#ddd;--acc:#2f5597}
-@media(prefers-color-scheme:dark){:root{--bg:#161616;--fg:#eee;--mut:#999;--line:#333;--acc:#8fb4ff}}
-body{font:20px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--fg);max-width:1100px;margin:2rem auto;padding:0 1rem}
-h1{font-size:1.6rem;margin:0}p{color:var(--mut);margin:.3rem 0 1rem}
-input,button{font:inherit;padding:.4rem .7rem;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
-input{width:22rem;max-width:100%}button{background:var(--acc);color:#fff;border:0;cursor:pointer}
-button.alt{background:none;color:var(--acc);border:1px solid var(--acc)}
-table{border-collapse:collapse;width:100%;font-size:.85rem;margin-top:1rem}
-th,td{border-bottom:1px solid var(--line);padding:.35rem .5rem;text-align:left;vertical-align:top}
-th{position:sticky;top:0;background:var(--bg)}
-.chips span{display:inline-block;margin:.2rem .3rem .2rem 0;padding:.1rem .6rem;border:1px solid var(--line);border-radius:99px;font-size:.85rem;cursor:pointer}
-.chips span.on{background:var(--acc);color:#fff;border-color:var(--acc)}
-pre{white-space:pre-wrap;word-break:break-all;font-size:.8rem;background:none;border:1px solid var(--line);padding:.6rem;border-radius:6px;margin:.3rem 0}
-#msg{color:var(--mut);margin-top:.6rem}
+:root{--bg:#fff;--fg:#1a1a1a;--mut:#666;--line:#ddd;--acc:#2f5597;--soft:#f3f6fb;--llm:#b35c00}
+body.dark{--bg:#161616;--fg:#eee;--mut:#9a9a9a;--line:#333;--acc:#8fb4ff;--soft:#1f2430;--llm:#ffb061}
+*{box-sizing:border-box}
+body{font:20px/1.45 system-ui,sans-serif;background:var(--bg);color:var(--fg);max-width:1200px;margin:1rem auto;padding:0 1rem}
+h1{font-size:1.6rem;margin:0;display:flex;justify-content:space-between;align-items:center}
+p{color:var(--mut);margin:.2rem 0 .8rem}
+input,select,button{font:inherit;padding:.35rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
+button{background:var(--acc);color:#fff;border:0;cursor:pointer}button.alt{background:none;color:var(--acc);border:1px solid var(--acc)}
+button:disabled{opacity:.5}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:.4rem 0}
+.seg label{border:1px solid var(--line);padding:.3rem .7rem;border-radius:6px;cursor:pointer}
+.seg input{display:none}.seg input:checked+span{font-weight:700;color:var(--acc)}
+.seg label:has(input:checked){border-color:var(--acc);background:var(--soft)}
+#llmbox{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:.6rem .8rem;font-size:.85rem}
+#llmbox input{font-size:.85rem;width:15rem;max-width:100%}
+#msg{color:var(--mut);margin:.5rem 0;font-size:.9rem}
+.tabs{display:flex;gap:.3rem;border-bottom:1px solid var(--line);margin-top:.6rem}
+.tabs button{background:none;color:var(--mut);border-radius:6px 6px 0 0}.tabs button.on{color:var(--acc);border:1px solid var(--line);border-bottom:2px solid var(--bg);margin-bottom:-1px;font-weight:700}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.6rem;margin:.5rem 0}
+.sum{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:.4rem .7rem;font-size:.85rem}.sum b{font-size:1.2rem;display:block}
+h2{font-size:1.1rem;margin:1rem 0 .2rem}h2 small{color:var(--mut);font-weight:400;font-size:.8rem}
+details{border:1px solid var(--line);border-radius:8px;margin:.35rem 0;padding:.3rem .7rem}
+summary{cursor:pointer;font-weight:600}summary span{color:var(--mut);font-weight:400;font-size:.8rem;margin-left:.4rem}
+.chip{display:inline-block;margin:.15rem .25rem .15rem 0;padding:.05rem .55rem;border:1px solid var(--line);border-radius:99px;font-size:.82rem;cursor:pointer;background:var(--bg)}
+.chip.co{border-style:dotted;color:var(--mut)}.chip.llm{border-color:var(--llm);border-style:dashed}.chip.done{background:var(--acc);color:#fff}
+.legend{font-size:.8rem;color:var(--mut);margin:.4rem 0}.legend .chip{cursor:default}
+.warn{background:#fff6e5;color:#6b4200;border:1px solid #f0c36d;border-radius:8px;padding:.4rem .7rem;font-size:.85rem;margin:.4rem 0}
+.q{margin:.3rem 0}.q b{font-size:.85rem}.q small{color:var(--mut)}
+pre{white-space:pre-wrap;word-break:break-all;font-size:.78rem;border:1px solid var(--line);padding:.5rem;border-radius:6px;margin:.2rem 0;position:relative}
+table{border-collapse:collapse;width:100%;font-size:.8rem}th,td{border-bottom:1px solid var(--line);padding:.3rem .5rem;text-align:left;vertical-align:top}th{position:sticky;top:0;background:var(--bg)}
+[hidden]{display:none!important}
 </style></head><body>
-<h1>kwgen</h1>
-<p>Type an anime title. It pulls the facts from AniList and builds a keyword table and ready X search queries.</p>
-<form id="f"><input id="t" placeholder="e.g. Kaiju No. 8" value="Kaiju No. 8" autofocus> <button>Generate</button>
-<button type="button" class="alt" id="csv" hidden>Download CSV</button></form>
-<div id="msg"></div><div class="chips" id="chips"></div>
-<div id="qs"></div><table id="tb" hidden><thead><tr><th>Category</th><th>Keyword</th><th>Lang</th><th>Needs title word</th><th>Note</th></tr></thead><tbody></tbody></table>
+<h1>kwgen <button class="alt" id="mode">Dark</button></h1>
+<p>Type an anime title and choose where the keywords come from. Facts come from AniList; an LLM adds what people actually write (arcs, slang, hashtags, music, games).</p>
+<form id="f">
+ <div class="row"><input id="t" size="26" value="Kaiju No. 8" placeholder="Anime title">
+  <span class="seg row" style="margin:0">
+   <label><input type="radio" name="src" value="anilist" checked><span>AniList</span></label>
+   <label><input type="radio" name="src" value="llm"><span>LLM</span></label>
+   <label><input type="radio" name="src" value="both"><span>Both</span></label></span>
+  <button id="go">Generate</button><button type="button" class="alt" id="csv" hidden>Download CSV</button></div>
+ <div id="llmbox" hidden>
+  <div class="row"><select id="prov"><option value="openrouter">OpenRouter</option><option value="anthropic">Anthropic</option><option value="custom">Other (OpenAI-compatible)</option></select>
+   <input id="model" placeholder="model"><input id="base" placeholder="base URL" hidden><input id="key" type="password" placeholder="API key (kept in this tab only)" autocomplete="off"></div>
+  <div class="row"><span>Price per million tokens, USD: in</span><input id="pin" size="3" value="3" style="width:4rem"> <span>out</span><input id="pout" size="3" value="15" style="width:4rem">
+   <label><input type="checkbox" id="ok"> I approve this spend</label></div>
+  <div id="est"></div>
+ </div>
+</form>
+<div id="msg"></div>
+<div id="out" hidden>
+ <div class="cards" id="cards"></div>
+ <div class="tabs"><button class="on" data-v="kw">Keywords</button><button data-v="qs">Search queries</button><button data-v="tb">Table</button></div>
+ <div id="kw"></div><div id="qs" hidden></div>
+ <div id="tb" hidden><div class="row"><input id="flt" placeholder="Filter table"></div><table><thead><tr><th>Category</th><th>Keyword</th><th>Lang</th><th>Source</th><th>Use</th><th>Note</th></tr></thead><tbody></tbody></table></div>
+</div>
 <script>
+const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const Q=`query($s:String){Media(search:$s,type:ANIME,sort:SEARCH_MATCH){id title{romaji english native}synonyms genres tags{name rank isMediaSpoiler}
 studios(isMain:true){nodes{name}}staff(perPage:25,sort:RELEVANCE){edges{role node{name{full native}}}}
 characters(perPage:25,sort:[ROLE,RELEVANCE]){edges{role node{name{full native alternative}}voiceActors(language:JAPANESE){name{full native}}}}
@@ -36,42 +72,126 @@ const SHARED=[["Merchandise words","en","merch, figure, plush, plushie, hoodie, 
 ["Streaming and platforms","en","Crunchyroll, Funimation, Netflix, Hulu, Prime Video, HIDIVE, simulcast, English dub"],
 ["Brands and retailers","en","Hot Topic, BoxLunch, Funko, Good Smile, Bandai, Amazon, Target, Walmart, Uniqlo UT"]];
 const KEEP=["Director","Original Creator","Story","Music","Series Composition","Character Design","Sound Director","Chief Animation"];
-const BAD=/[가-힯Ѐ-ӿ؀-ۿ฀-๿]/, JA=/[぀-ヿ一-鿿]/;
-const lang=s=>JA.test(s)?"ja":"en", COTERM=new Set(["Voice actors","Genre and theme","Similar titles","Merchandise words","Platform and gaming overlap","Streaming and platforms","Brands and retailers"]);
-let rows=[],queries=[],title="";
+const BAD=/[가-힯Ѐ-ӿ؀-ۿ฀-๿]/,JA=/[぀-ヿ一-鿿]/,lang=s=>JA.test(s)?"ja":"en";
+// category -> [block, help]. block "id" = safe on its own; "ctx" = add a title word
+const CAT={
+"Title names":["id","The show's names, short forms and synonyms."],
+"Hashtags":["id","Generated or known hashtags. Confirm on sample posts."],
+"Official account":["id","The show's official X account."],
+"Characters":["id","Main and supporting characters, English and Japanese spellings."],
+"Creators and crew":["id","Director, original creator, music, character design, studio."],
+"Story arcs and events":["id","Arcs, seasons, movies and moments fans name."],
+"Music":["id","Opening and ending songs, artists, soundtrack terms."],
+"Games and adaptations":["id","Video games (with platform), stage plays, live action."],
+"Live events and places":["id","Exhibitions, concerts, conventions, real places."],
+"Franchise and related works":["id","Sequels, spin-offs and source material."],
+"Iconic terms and quotes":["ctx","Catchphrases, signature moves, in-world terms. Often common words."],
+"Fan slang and memes":["ctx","Nicknames, ship names, memes, fandom names. Often common words."],
+"Voice actors":["ctx","Japanese voice actors. Analyse as a separate audience stream."],
+"Voice actors other roles":["ctx","Other popular roles of the main voice actors."],
+"Genre and theme":["ctx","Genres and themes, for audience analysis, not for finding the show."],
+"Similar titles":["ctx","Shows with the same audience, for co-mention analysis."],
+"Merchandise and collaborations":["ctx","Known product lines and brand collaborations."],
+"Merchandise words":["ctx","Buying words (figure, plush, pre-order...). Use with a title word."],
+"Platform and gaming overlap":["ctx","PlayStation and gaming terms for the audience-overlap question."],
+"Streaming and platforms":["ctx","Where people watch."],
+"Brands and retailers":["ctx","Shops and licence holders."]};
+const ORDER=Object.keys(CAT);
+const LLMCATS=["Story arcs and events","Iconic terms and quotes","Fan slang and memes","Hashtags","Music","Games and adaptations","Merchandise and collaborations","Live events and places","Voice actors other roles","Platform and gaming overlap"];
+const LLMONLY=["Title names","Characters","Creators and crew","Franchise and related works","Genre and theme","Similar titles"];
+let rows=[],warns=[],queries=[],title="",titleTerms=[];
+const $$=s=>[...document.querySelectorAll(s)];
+
+function addRow(c,t,note,s,co){if(!t||typeof t!=="string")return;t=t.trim();if(!t||BAD.test(t)||t.length>80)return;
+ const k=(c+"|"+t).toLowerCase();if(seen.has(k))return;seen.add(k);
+ rows.push({c,t,l:lang(t),s,n:note||"",co:co||CAT[c]?.[0]==="ctx"})}
+let seen=new Set();
 function hashtag(s){const p=s.replace(/[^\w぀-ヿ一-鿿 ]/g," ").split(/\s+/).filter(Boolean);return p.length?"#"+p.map(x=>JA.test(x)?x:x[0].toUpperCase()+x.slice(1)).join(""):null}
-function build(m){rows=[];const seen=new Set();
- const add=(c,t,note="",co=false)=>{if(!t||!t.trim()||BAD.test(t))return;t=t.trim();const k=c+"|"+t.toLowerCase();if(seen.has(k))return;seen.add(k);
-  rows.push({c,t,l:lang(t),co:co||COTERM.has(c),n:note})};
- const T=m.title,names=[T.english,T.romaji,T.native,...(m.synonyms||[])];
- names.forEach(n=>add("Title names",n));names.forEach(n=>{if(n&&n.includes(":"))add("Title names",n.split(":")[0],"short form")});
- [T.english,T.romaji,T.native].forEach(n=>n&&add("Hashtags",hashtag(n),"generated candidate; confirm on sample posts"));
- (m.externalLinks||[]).forEach(l=>{if(["Twitter","X"].includes(l.site)&&l.url)add("Official account","@"+l.url.replace(/\/$/,"").split("/").pop(),"official X account")});
- m.characters.edges.forEach(e=>{const n=e.node.name,r=e.role.toLowerCase();add("Characters",n.full,r);add("Characters",n.native,r);(n.alternative||[]).slice(0,2).forEach(a=>add("Characters",a,"alias"));
-  (e.voiceActors||[]).forEach(v=>{add("Voice actors",v.name.full,"voices "+n.full);add("Voice actors",v.name.native,"voices "+n.full)})});
- m.staff.edges.forEach(e=>{if(KEEP.some(k=>e.role.includes(k))){add("Creators and crew",e.node.name.full,e.role);add("Creators and crew",e.node.name.native,e.role)}});
- m.studios.nodes.forEach(s=>add("Creators and crew",s.name,"studio"));
- m.relations.edges.forEach(e=>["english","romaji","native"].forEach(k=>add("Franchise and related works",e.node.title[k],e.relationType.toLowerCase().replace(/_/g," "))));
- m.tags.filter(x=>x.rank>=50&&!x.isMediaSpoiler).forEach(x=>add("Genre and theme",x.name,"theme"));m.genres.forEach(g=>add("Genre and theme",g,"genre"));
- m.recommendations.nodes.forEach(r=>r.mediaRecommendation&&add("Similar titles",r.mediaRecommendation.title.english||r.mediaRecommendation.title.romaji,"for co-mention analysis"));
- SHARED.forEach(([c,l,s])=>s.split(",").forEach(t=>add(c,t.trim(),"shared list",true)));
- const q=t=>t.includes(" ")?`"${t}"`:t,grp=(name,f)=>["en","ja"].forEach(l=>{let cur=[];const ts=rows.filter(r=>f(r)&&r.l===l).map(r=>q(r.t));
-  const flush=()=>{if(cur.length)queries.push([name,l,`(${cur.join(" OR ")}) lang:${l} -is:retweet`]);cur=[]};
-  ts.forEach(t=>{if(cur.concat(t).join(" OR ").length+12>450)flush();cur.push(t)});flush()});
- queries=[];grp("A core",r=>["Title names","Hashtags","Official account"].includes(r.c));grp("B characters",r=>r.c==="Characters");grp("C creators and crew",r=>r.c==="Creators and crew");
- grp("F voice actors (separate stream)",r=>r.c==="Voice actors");grp("G gaming overlap (add a title word)",r=>r.c==="Platform and gaming overlap");grp("H merchandise (add a title word)",r=>["Merchandise words","Brands and retailers"].includes(r.c));
+function fromAniList(m){const T=m.title,A=(c,t,n,co)=>addRow(c,t,n,"anilist",co);
+ const names=[T.english,T.romaji,T.native,...(m.synonyms||[])];names.forEach(n=>A("Title names",n));
+ names.forEach(n=>{if(n&&n.includes(":"))A("Title names",n.split(":")[0],"short form")});
+ [T.english,T.romaji,T.native].forEach(n=>n&&A("Hashtags",hashtag(n),"generated; confirm on sample posts"));
+ (m.externalLinks||[]).forEach(l=>{if(["Twitter","X"].includes(l.site)&&l.url)A("Official account","@"+l.url.replace(/\/$/,"").split("/").pop())});
+ m.characters.edges.forEach(e=>{const n=e.node.name,r=e.role.toLowerCase();A("Characters",n.full,r);A("Characters",n.native,r);(n.alternative||[]).slice(0,2).forEach(a=>A("Characters",a,"alias"));
+  (e.voiceActors||[]).forEach(v=>{A("Voice actors",v.name.full,"voices "+n.full);A("Voice actors",v.name.native,"voices "+n.full)})});
+ m.staff.edges.forEach(e=>{if(KEEP.some(k=>e.role.includes(k))){A("Creators and crew",e.node.name.full,e.role);A("Creators and crew",e.node.name.native,e.role)}});
+ m.studios.nodes.forEach(s=>A("Creators and crew",s.name,"studio"));
+ m.relations.edges.forEach(e=>["english","romaji","native"].forEach(k=>A("Franchise and related works",e.node.title[k],e.relationType.toLowerCase().replace(/_/g," "))));
+ m.tags.filter(x=>x.rank>=50&&!x.isMediaSpoiler).forEach(x=>A("Genre and theme",x.name,"theme"));m.genres.forEach(g=>A("Genre and theme",g,"genre"));
+ m.recommendations.nodes.forEach(r=>r.mediaRecommendation&&A("Similar titles",r.mediaRecommendation.title.english||r.mediaRecommendation.title.romaji));
 }
-function show(){const cats=[...new Set(rows.map(r=>r.c))];let sel=new Set(cats);
- const draw=()=>{chips.innerHTML=cats.map(c=>`<span class="${sel.has(c)?"on":""}" data-c="${c}">${c} (${rows.filter(r=>r.c===c).length})</span>`).join("");
-  tb.hidden=false;tb.tBodies[0].innerHTML=rows.filter(r=>sel.has(r.c)).map(r=>`<tr><td>${r.c}</td><td>${esc(r.t)}</td><td>${r.l}</td><td>${r.co?"yes":""}</td><td>${esc(r.n)}</td></tr>`).join("")};
- chips.onclick=e=>{const c=e.target.dataset.c;if(c){sel.has(c)?sel.delete(c):sel.add(c);draw()}};draw();
- qs.innerHTML="<h3>Queries (X syntax, 450 characters or less)</h3>"+queries.map(([g,l,s])=>`<div><b>${g}</b> [${l}]<pre>${esc(s)}</pre></div>`).join("");csv.hidden=false}
-const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-f.onsubmit=async e=>{e.preventDefault();msg.textContent="Fetching from AniList...";tb.hidden=true;qs.innerHTML=chips.innerHTML="";csv.hidden=true;
- try{const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({query:Q,variables:{s:t.value}})});
-  const j=await r.json();if(!j.data||!j.data.Media)throw new Error(j.errors?j.errors[0].message:"No match");const m=j.data.Media;title=m.title.romaji;
-  build(m);msg.textContent=`Matched ${m.title.romaji} / ${m.title.native || ""}: ${rows.length} keywords, ${queries.length} queries.`;show()}catch(x){msg.textContent="Error: "+x.message}};
-csv.onclick=()=>{const c=s=>`"${String(s).replace(/"/g,'""')}"`;const b=new Blob(["﻿"+"category,keyword,language,needs_title_word,note\n"+rows.map(r=>[r.c,r.t,r.l,r.co?"yes":"no",r.n].map(c).join(",")).join("\n")],{type:"text/csv"});
+function shared(){SHARED.forEach(([c,l,s])=>s.split(",").forEach(t=>addRow(c,t.trim(),"shared list","shared",true)))}
+function prompt(name,facts,withBase){const cats=(withBase?LLMONLY.concat(LLMCATS):LLMCATS);
+ return `You are a social-media listening analyst. Build search keywords for the anime "${name}".${facts?`\nKnown facts (already collected, do not repeat them): ${facts}`:""}
+Return ONLY a JSON object. Keys and what to put in each:
+${cats.map(c=>`- "${c}": ${CAT[c]?CAT[c][1]:""}`).join("\n")}
+- "Ambiguity warnings": words in your lists that also mean something else, with what to exclude, e.g. "camp (also outdoor camping)".
+Each value is an array of strings (max 25 each). Use English and Japanese spellings. Do not invent: leave an array empty if unsure. No commentary.`}
+function facts(m){return `titles ${[m.title.english,m.title.romaji,m.title.native].filter(Boolean).join(" / ")}; main characters ${m.characters.edges.slice(0,8).map(e=>e.node.name.full).join(", ")}; studio ${(m.studios.nodes[0]||{}).name||"?"}`}
+function estimate(p){const i=Math.ceil(p.length/4)+50,o=2500,usd=(i*+$("pin").value+o*+$("pout").value)/1e6;return {i,o,usd,inr:usd*100}}
+async function callLLM(p){const prov=$("prov").value,key=$("key").value.trim(),model=$("model").value.trim();let r,j,txt;
+ if(prov==="anthropic"){r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model,max_tokens:4000,messages:[{role:"user",content:p}]})});
+  j=await r.json();if(!r.ok)throw new Error(j.error?.message||r.status);txt=j.content.map(x=>x.text||"").join("")}
+ else{const base=prov==="openrouter"?"https://openrouter.ai/api/v1":$("base").value.replace(/\/$/,"");
+  r=await fetch(base+"/chat/completions",{method:"POST",headers:{"content-type":"application/json",Authorization:"Bearer "+key},body:JSON.stringify({model,max_tokens:4000,messages:[{role:"user",content:p}]})});
+  j=await r.json();if(!r.ok)throw new Error(j.error?.message||r.status);txt=j.choices[0].message.content}
+ return txt}
+function parseJSON(t){const a=t.indexOf("{"),b=t.lastIndexOf("}");if(a<0||b<0)throw new Error("The model did not return JSON");return JSON.parse(t.slice(a,b+1))}
+function fromLLM(o){warns=[];for(const [c,arr] of Object.entries(o)){if(!Array.isArray(arr))continue;
+  if(c==="Ambiguity warnings"){arr.forEach(w=>typeof w==="string"&&warns.push(w));continue}
+  const cat=CAT[c]?c:null;if(!cat)continue;arr.forEach(t=>addRow(cat,t,"LLM, unverified","llm"))}}
+
+function buildQueries(){queries=[];const core=rows.filter(r=>["Title names","Hashtags","Official account"].includes(r.c)&&!(r.c==="Title names"&&(r.t.length<4)));
+ const q=t=>/\s/.test(t)?`"${t}"`:t,max=450;
+ const mk=(name,filter,prefixOn)=>["en","ja"].forEach(l=>{const ts=rows.filter(r=>filter(r)&&r.l===l).map(r=>q(r.t));if(!ts.length)return;
+  const pre=prefixOn?(()=>{const t=core.filter(r=>r.c==="Title names"&&r.l===l).slice(0,3).map(r=>q(r.t));const any=t.length?t:core.filter(r=>r.c==="Title names").slice(0,3).map(r=>q(r.t));return "("+any.join(" OR ")+") "})():"";
+  const suf=` lang:${l} -is:retweet`;let cur=[];const flush=()=>{if(cur.length)queries.push([name,l,pre+"("+cur.join(" OR ")+")"+suf]);cur=[]};
+  ts.forEach(t=>{if((pre+"("+cur.concat(t).join(" OR ")+")"+suf).length>max)flush();cur.push(t)});flush()});
+ mk("Find the show: names, hashtags, account",r=>["Title names","Hashtags","Official account"].includes(r.c)&&!r.co,false);
+ mk("Find the show: characters",r=>r.c==="Characters",false);
+ mk("Find the show: creators and crew",r=>r.c==="Creators and crew",false);
+ mk("Find the show: arcs, music, games, places, franchise",r=>["Story arcs and events","Music","Games and adaptations","Live events and places","Franchise and related works"].includes(r.c),false);
+ mk("Context: iconic terms and slang (with a title word)",r=>["Iconic terms and quotes","Fan slang and memes"].includes(r.c),true);
+ mk("Context: voice actors (separate stream)",r=>["Voice actors","Voice actors other roles"].includes(r.c),false);
+ mk("Context: PlayStation and gaming overlap (with a title word)",r=>r.c==="Platform and gaming overlap",true);
+ mk("Context: merchandise, retailers, platforms (with a title word)",r=>["Merchandise words","Merchandise and collaborations","Brands and retailers","Streaming and platforms"].includes(r.c),true)}
+
+function render(){$("out").hidden=false;const n=s=>rows.filter(r=>r.s===s).length;
+ $("cards").innerHTML=[["Keywords",rows.length],["From AniList",n("anilist")],["From LLM (unverified)",n("llm")],["Search queries",queries.length]].map(([a,b])=>`<div class="sum">${a}<b>${b}</b></div>`).join("");
+ const block=(id,head,sub)=>{const cats=ORDER.filter(c=>CAT[c][0]===id&&rows.some(r=>r.c===c));if(!cats.length)return"";
+  return `<h2>${head} <small>${sub}</small></h2>`+cats.map(c=>{const rs=rows.filter(r=>r.c===c);return `<details ${id==="id"&&rs.length<=40?"open":""}><summary>${c}<span>${rs.length} · ${CAT[c][1]}</span></summary>`+
+   rs.map(r=>`<span class="chip ${r.co?"co":""} ${r.s==="llm"?"llm":""}" title="${esc(r.n)}" data-t="${esc(r.t)}">${esc(r.t)}</span>`).join("")+`</details>`}).join("")};
+ $("kw").innerHTML=`<div class="legend">Click a keyword to copy it. <span class="chip">solid</span> safe on its own · <span class="chip co">dotted</span> add a title word · <span class="chip llm">orange dashed</span> from the LLM, check on sample posts</div>`+
+  block("id","Find the show","safe to search on their own")+block("ctx","Context words","add a title word, or they will pull unrelated posts")+
+  (warns.length?`<h2>Watch out for</h2><div class="warn">${warns.map(esc).join("<br>")}</div>`:"");
+ $("qs").innerHTML=`<div class="legend">X search syntax, 450 characters or less each. Click to copy. "Context" queries already include the title.</div>`+
+  queries.map(([g,l,s],i)=>`<div class="q"><b>${esc(g)}</b> <small>${l==="ja"?"Japanese":"English"}</small><pre data-q="${i}">${esc(s)}</pre></div>`).join("");
+ tbl()}
+function tbl(){const f=$("flt").value.toLowerCase();$("tb").querySelector("tbody").innerHTML=rows.filter(r=>!f||(r.c+r.t+r.n).toLowerCase().includes(f)).map(r=>`<tr><td>${r.c}</td><td>${esc(r.t)}</td><td>${r.l}</td><td>${r.s}</td><td>${r.co?"with a title word":"alone"}</td><td>${esc(r.n)}</td></tr>`).join("")}
+async function copy(el,txt){try{await navigator.clipboard.writeText(txt)}catch(e){}el.classList.add("done");setTimeout(()=>el.classList.remove("done"),600)}
+document.addEventListener("click",e=>{const c=e.target.closest(".chip[data-t]");if(c)copy(c,c.dataset.t);const p=e.target.closest("pre[data-q]");if(p)copy(p,queries[p.dataset.q][2]);
+ const tb=e.target.closest(".tabs button");if(tb){$$(".tabs button").forEach(b=>b.classList.toggle("on",b===tb));["kw","qs","tb"].forEach(v=>$(v).hidden=v!==tb.dataset.v)}});
+$("flt").oninput=tbl;
+const src=()=>document.querySelector("input[name=src]:checked").value;
+function ui(){const s=src();$("llmbox").hidden=s==="anilist";$("go").textContent=s==="anilist"?"Generate":"Generate with LLM";
+ const p=$("prov").value;$("base").hidden=p!=="custom";if(!$("model").value||$("model").dataset.auto)$("model").value=p==="anthropic"?"claude-sonnet-5-5":p==="openrouter"?"anthropic/claude-sonnet-5.5":"",$("model").dataset.auto=1;
+ if(s!=="anilist"){const e=estimate(prompt($("t").value,"",s==="llm"));$("est").innerHTML=`<small>Estimate: about ${e.i} input and ${e.o} output tokens, about USD ${e.usd.toFixed(3)} (INR ${e.inr.toFixed(1)}). Nothing is sent until you tick the box and press Generate. The key stays in this tab and goes only to the provider you chose.</small>`}}
+document.querySelectorAll("input[name=src],#prov,#pin,#pout,#t").forEach(x=>x.addEventListener("input",ui));$("model").addEventListener("input",()=>delete $("model").dataset.auto);
+$("mode").onclick=()=>{document.body.classList.toggle("dark");$("mode").textContent=document.body.classList.contains("dark")?"Light":"Dark"};
+$("f").onsubmit=async e=>{e.preventDefault();const s=src(),name=$("t").value.trim();if(!name)return;
+ if(s!=="anilist"&&(!$("ok").checked||!$("key").value.trim()||!$("model").value.trim()||($("prov").value==="custom"&&!$("base").value.trim()))){$("msg").textContent="For the LLM options, enter the key and model, and tick the approval box.";return}
+ $("go").disabled=true;$("out").hidden=true;$("csv").hidden=true;rows=[];warns=[];seen=new Set();let m=null,note="";
+ try{
+  if(s!=="llm"){$("msg").textContent="Step 1: fetching facts from AniList...";
+   const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({query:Q,variables:{s:name}})});
+   const j=await r.json();if(!j.data||!j.data.Media){if(s==="anilist")throw new Error("No match on AniList");note=" AniList found no match, so only LLM results are shown."}else{m=j.data.Media;fromAniList(m)}}
+  title=m?m.title.romaji:name;
+  if(s!=="anilist"){$("msg").textContent=`${m?"Step 2":"Step 1"}: asking the LLM...`;const txt=await callLLM(prompt(m?m.title.english||m.title.romaji:name,m?facts(m):"",!m));fromLLM(parseJSON(txt))}
+  shared();buildQueries();render();
+  $("msg").textContent=`${title}: ${rows.length} keywords, ${queries.length} queries.${note}`;$("csv").hidden=false;
+ }catch(x){$("msg").textContent="Error: "+x.message;if(rows.length){shared();buildQueries();render();$("csv").hidden=false}}
+ $("go").disabled=false};
+$("csv").onclick=()=>{const c=s=>`"${String(s).replace(/"/g,'""')}"`;const b=new Blob(["﻿"+"category,keyword,language,source,use,note\n"+rows.map(r=>[r.c,r.t,r.l,r.s,r.co?"with a title word":"alone",r.n].map(c).join(",")).join("\n")],{type:"text/csv"});
  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=title.replace(/\W+/g,"_")+"_keywords.csv";a.click()};
-f.requestSubmit();
+ui();$("f").requestSubmit();
 </script></body></html>

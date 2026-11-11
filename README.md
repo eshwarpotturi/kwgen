@@ -5,7 +5,12 @@ Keyword generator for anime titles. Give it a title; it returns a detailed keywo
 **Demo:** https://eshwarpotturi.github.io/kwgen/
 
 ## Web demo
-`index.html` runs in the browser and calls the free AniList API. No install, no key. Filter by category and download the table as CSV.
+`index.html` runs in the browser. Choose the source:
+- **AniList** (free, no key): names, characters, voice actors, crew, related works, themes, similar titles.
+- **LLM**: names, arcs, iconic terms, fan slang, hashtags, music, games, collaborations, ambiguity warnings. Needs your own API key (OpenRouter, Anthropic or any OpenAI-compatible endpoint). The page shows a cost estimate and waits for your approval; the key stays in the browser tab.
+- **Both**: AniList facts first, then the LLM adds the rest. LLM terms are marked as unverified.
+
+Results are grouped into "Find the show" (safe on their own) and "Context words" (add a title word), with ready search queries and a CSV download.
 
 ## Command line
 Needs Python 3.9+ and `pip install openpyxl`.
