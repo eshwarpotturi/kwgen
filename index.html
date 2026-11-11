@@ -17,7 +17,7 @@ button:disabled{opacity:.5}
 .seg label:has(input:checked){border-color:var(--acc);background:var(--soft)}
 #llmbox{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:.6rem .8rem;font-size:.85rem}
 #llmbox input{font-size:.85rem;width:15rem;max-width:100%}
-#msg{color:var(--mut);margin:.5rem 0;font-size:.9rem}
+#msg{color:var(--mut);margin:.5rem 0;font-size:.9rem}#msg.err{color:#b00020;font-weight:700}
 .tabs{display:flex;gap:.3rem;border-bottom:1px solid var(--line);margin-top:.6rem}
 .tabs button{background:none;color:var(--mut);border-radius:6px 6px 0 0}.tabs button.on{color:var(--acc);border:1px solid var(--line);border-bottom:2px solid var(--bg);margin-bottom:-1px;font-weight:700}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.6rem;margin:.5rem 0}
@@ -45,7 +45,7 @@ table{border-collapse:collapse;width:100%;font-size:.8rem}th,td{border-bottom:1p
   <button id="go">Generate</button><button type="button" class="alt" id="csv" hidden>Download CSV</button></div>
  <div id="llmbox" hidden>
   <div class="row"><select id="prov"><option value="foundry">LLM Foundry</option><option value="openrouter">OpenRouter</option><option value="anthropic">Anthropic</option><option value="custom">Other (OpenAI-compatible)</option></select>
-   <input id="model" placeholder="model"><input id="base" placeholder="base URL" hidden><input id="key" type="password" placeholder="API key (kept in this tab only)" autocomplete="off"></div>
+   <input id="model" placeholder="model"><input id="base" placeholder="base URL" hidden><input id="key" type="password" placeholder="API key" autocomplete="off"><button type="button" class="alt" id="kf">Load key from file</button><input type="file" id="kfile" accept=".txt,.key,text/plain" hidden><label><input type="checkbox" id="rem"> remember on this device</label></div>
   <div class="row"><span>Price per million tokens, USD: in</span><input id="pin" size="3" value="0.4" style="width:4rem"> <span>out</span><input id="pout" size="3" value="1.6" style="width:4rem">
    <label><input type="checkbox" id="ok"> I approve this spend</label></div>
   <div id="est"></div>
@@ -175,11 +175,12 @@ $("flt").oninput=tbl;
 const src=()=>document.querySelector("input[name=src]:checked").value;
 function ui(){const s=src();$("llmbox").hidden=s==="anilist";$("go").textContent=s==="anilist"?"Generate":"Generate with LLM";
  const p=$("prov").value;$("base").hidden=!(p==="custom"||p==="foundry");if(p==="foundry"&&!$("base").value)$("base").value="https://llmfoundry.straivedemo.com/openai/v1";if(!$("model").value||$("model").dataset.auto)$("model").value=p==="anthropic"?"claude-sonnet-5-5":p==="openrouter"?"anthropic/claude-sonnet-5.5":p==="foundry"?"gpt-4.1-mini":"",$("model").dataset.auto=1;
- if(s!=="anilist"){const e=estimate(prompt($("t").value,"",s==="llm"));$("est").innerHTML=`<small>Estimate: about ${e.i} input and ${e.o} output tokens, about USD ${e.usd.toFixed(3)} (INR ${e.inr.toFixed(1)}). Nothing is sent until you tick the box and press Generate. The key stays in this tab and goes only to the provider you chose.</small>`}}
+ if(s!=="anilist"){const e=estimate(prompt($("t").value,"",s==="llm"));$("est").innerHTML=`<small>Estimate: about ${e.i} input and ${e.o} output tokens, about USD ${e.usd.toFixed(3)} (INR ${e.inr.toFixed(1)}). Nothing is sent until you tick the box and press Generate. The key goes only to the provider you chose. Use "Load key from file" to read a key file from your computer (it is not uploaded anywhere).</small>`}}
 document.querySelectorAll("input[name=src],#prov,#pin,#pout,#t").forEach(x=>x.addEventListener("input",ui));$("model").addEventListener("input",()=>delete $("model").dataset.auto);
 $("mode").onclick=()=>{document.body.classList.toggle("dark");$("mode").textContent=document.body.classList.contains("dark")?"Light":"Dark"};
 $("f").onsubmit=async e=>{e.preventDefault();const s=src(),name=$("t").value.trim();if(!name)return;
- if(s!=="anilist"&&(!$("ok").checked||!$("key").value.trim()||!$("model").value.trim()||(["custom","foundry"].includes($("prov").value)&&!$("base").value.trim()))){$("msg").textContent="For the LLM options, enter the key and model, and tick the approval box.";return}
+ if(s!=="anilist"&&(!$("ok").checked||!$("key").value.trim()||!$("model").value.trim()||(["custom","foundry"].includes($("prov").value)&&!$("base").value.trim()))){{const miss=[!$("key").value.trim()&&"the API key (paste it, or press Load key from file)",!$("model").value.trim()&&"the model",!$("ok").checked&&"the approval tick"].filter(Boolean);$("msg").className="err";$("msg").textContent="Still needed: "+miss.join(", ")+".";return}}
+ $("msg").className="";if($("rem").checked)try{localStorage.setItem("kwgen_key",$("key").value.trim())}catch(e){}else try{localStorage.removeItem("kwgen_key")}catch(e){}
  $("go").disabled=true;$("out").hidden=true;$("csv").hidden=true;rows=[];warns=[];seen=new Set();let m=null,note="";
  try{
   if(s!=="llm"){$("msg").textContent="Step 1: fetching facts from AniList...";
@@ -189,9 +190,11 @@ $("f").onsubmit=async e=>{e.preventDefault();const s=src(),name=$("t").value.tri
   if(s!=="anilist"){$("msg").textContent=`${m?"Step 2":"Step 1"}: asking the LLM...`;const txt=await callLLM(prompt(m?m.title.english||m.title.romaji:name,m?facts(m):"",!m));fromLLM(parseJSON(txt))}
   shared();buildQueries();render();
   $("msg").textContent=`${title}: ${rows.length} keywords, ${queries.length} queries.${note}`;$("csv").hidden=false;
- }catch(x){$("msg").textContent="Error: "+x.message;if(rows.length){shared();buildQueries();render();$("csv").hidden=false}}
+ }catch(x){$("msg").className="err";$("msg").textContent="Error: "+x.message+(x.message==="Failed to fetch"?" (the browser could not reach the service; check the address and key)":"");if(rows.length){shared();buildQueries();render();$("csv").hidden=false}}
  $("go").disabled=false};
 $("csv").onclick=()=>{const c=s=>`"${String(s).replace(/"/g,'""')}"`;const b=new Blob(["﻿"+"category,keyword,language,source,use,note\n"+rows.map(r=>[r.c,r.t,r.l,r.s,r.co?"with a title word":"alone",r.n].map(c).join(",")).join("\n")],{type:"text/csv"});
  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=title.replace(/\W+/g,"_")+"_keywords.csv";a.click()};
+$("kf").onclick=()=>$("kfile").click();$("kfile").onchange=async e=>{const f=e.target.files[0];if(f){$("key").value=(await f.text()).trim().split(/\s+/)[0];$("msg").className="";$("msg").textContent="Key loaded from "+f.name+" (not uploaded anywhere)."}};
+try{const k=localStorage.getItem("kwgen_key");if(k){$("key").value=k;$("rem").checked=true}}catch(e){}
 ui();$("f").requestSubmit();
 </script></body></html>
