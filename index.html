@@ -185,7 +185,7 @@ $("f").onsubmit=async e=>{e.preventDefault();const s=src(),name=$("t").value.tri
  try{
   if(s!=="llm"){$("msg").textContent="Step 1: fetching facts from AniList...";
    const r=await fetch("https://graphql.anilist.co",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({query:Q,variables:{s:name}})});
-   const j=await r.json();if(!j.data||!j.data.Media){if(s==="anilist")throw new Error("No match on AniList");note=" AniList found no match, so only LLM results are shown."}else{m=j.data.Media;fromAniList(m)}}
+   const j=await r.json();if(!j.data||!j.data.Media){if(s==="anilist")throw new Error("No match on AniList for \""+name+"\". Try the full title with spaces, e.g. One Piece");note=" AniList found no match for \""+name+"\" (try the full title with spaces, e.g. One Piece), so only LLM results are shown."}else{m=j.data.Media;fromAniList(m)}}
   title=m?m.title.romaji:name;
   if(s!=="anilist"){$("msg").textContent=`${m?"Step 2":"Step 1"}: asking the LLM...`;const txt=await callLLM(prompt(m?m.title.english||m.title.romaji:name,m?facts(m):"",!m));fromLLM(parseJSON(txt))}
   shared();buildQueries();render();
