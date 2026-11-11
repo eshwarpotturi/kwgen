@@ -142,6 +142,16 @@ def llm_call(provider, model, prompt):
         out = post_json("https://api.anthropic.com/v1/messages", {"model": model, "max_tokens": 4000, "messages": [{"role": "user", "content": prompt}]},
                         {"x-api-key": key, "anthropic-version": "2023-06-01"}, 120)
         return out["content"][0]["text"]
+    if provider == "foundry":
+        # LLM Foundry (OpenAI-compatible). Token: FOUNDRY_TOKEN env var, or the first file found among the paths below. Never printed.
+        tok = os.environ.get("FOUNDRY_TOKEN", "")
+        for f in [os.environ.get("FOUNDRY_TOKEN_FILE", "")] + [".foundry-token.txt", ".foundry-token", "../AIA-Gov/.foundry-token.txt"]:
+            if not tok and f and os.path.exists(f): tok = open(f, encoding="utf-8").read().strip()
+        if not tok: sys.exit("No Foundry token: set FOUNDRY_TOKEN or FOUNDRY_TOKEN_FILE")
+        base = os.environ.get("FOUNDRY_BASE", "https://llmfoundry.straivedemo.com").rstrip("/")
+        out = post_json(base + "/openai/v1/chat/completions", {"model": model, "messages": [{"role": "user", "content": prompt}], "temperature": 0.2},
+                        {"Authorization": "Bearer " + tok + ":kwgen"}, 120)
+        return out["choices"][0]["message"]["content"]
     url = {"openrouter": "https://openrouter.ai/api/v1/chat/completions"}.get(provider, os.environ.get("LLM_BASE_URL", "") + "/chat/completions")
     key = os.environ.get("OPENROUTER_API_KEY" if provider == "openrouter" else "LLM_API_KEY", "")
     out = post_json(url, {"model": model, "max_tokens": 4000, "messages": [{"role": "user", "content": prompt}]}, {"Authorization": "Bearer " + key}, 120)
@@ -284,10 +294,10 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build"); b.add_argument("titles", nargs="+"); b.add_argument("--out", default="keywords.xlsx")
-    b.add_argument("--llm", choices=["openrouter", "anthropic", "openai-compatible"]); b.add_argument("--model", default="")
+    b.add_argument("--llm", choices=["foundry", "openrouter", "anthropic", "openai-compatible"]); b.add_argument("--model", default="gpt-4.1-mini")
     b.add_argument("--estimate", action="store_true", help="print cost estimate only; no paid call")
     b.add_argument("--approve-spend", action="store_true", help="explicit approval for paid LLM calls")
-    b.add_argument("--price-in", type=float, default=3.0, help="USD per million input tokens"); b.add_argument("--price-out", type=float, default=15.0)
+    b.add_argument("--price-in", type=float, default=0.4, help="USD per million input tokens (default: gpt-4.1-mini)"); b.add_argument("--price-out", type=float, default=1.6)
     v = sub.add_parser("validate"); v.add_argument("--keywords", required=True); v.add_argument("--posts", required=True); v.add_argument("--title", required=True)
     a = ap.parse_args()
     {"build": cmd_build, "validate": cmd_validate}[a.cmd](a)

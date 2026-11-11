@@ -22,10 +22,10 @@ Needs Python 3.9+ and `pip install openpyxl`.
 
 Optional LLM stage (arcs, fan slang, hashtags, music, games, collaborations, ambiguity warnings). It is a paid call, so it needs an explicit flag:
 
-    python kwgen.py build "Laid-Back Camp" --llm openrouter --model MODEL --estimate        # prints the cost, spends nothing
-    python kwgen.py build "Laid-Back Camp" --llm openrouter --model MODEL --approve-spend   # runs it
+    python kwgen.py build "Laid-Back Camp" --llm foundry --estimate        # prints the cost, spends nothing
+    python kwgen.py build "Laid-Back Camp" --llm foundry --approve-spend   # runs it (default model gpt-4.1-mini)
 
-Keys: `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, or `LLM_BASE_URL` + `LLM_API_KEY`.
+Keys: for `foundry`, `FOUNDRY_TOKEN` or a token file (`FOUNDRY_TOKEN_FILE`, or `.foundry-token.txt` next to the tool); also `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, or `LLM_BASE_URL` + `LLM_API_KEY`.
 
 `sample_keywords.xlsx` is the output for four titles.
 
